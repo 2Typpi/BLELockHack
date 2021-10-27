@@ -1,6 +1,7 @@
 package com.mw;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static com.mw.Utils.byteArrayToHex;
 import static com.mw.Utils.hexStringToByteArray;
@@ -18,14 +19,23 @@ import static com.mw.Utils.hexStringToByteArray;
 public class Main {
 
     public static void main(String[] args) {
-        String STKGenerationMessage = "03008bd530002688000000000000000000000000";
-        String authByteMessage = "0700f2b9d5158dec07bf05a43026982b4222433ce86cadf7a37211c8da5fa1e11df5000686c13c697fbd3cbe0ffb330776928a110f7bf226b9441a6749110e943e75e8c84b928a110f7bf226b9441a67";
-        String invokeChallengeMessage = "0900ac202e0c6f9ea717131962ec621aff6a9d0a";
-        String LTKConfirmationMessage = "0032b3e692dda29d6bcb488ed702eed08e8fb4fa591252c6c99fb49e6b6920b06feed0aa09788628e0d1bec2e43b1ee24f1e20b06feed0aa09788628";
-        String lockStatus = "0022cf5f839e6994b0e9ffb5133c75da7b4d90948d7a3cae0e055d67be4f95a8f8eb75da7b4d9094";
+        String filePath = args[0];
+        System.out.println(filePath);
+
+        MessageParser messageParser = new MessageParser();
+        List<String> messages = messageParser.getMessages(filePath);
+
+        if (messages == null) {
+            return;
+        }
+
+        String STKGenerationMessage = messages.get(0);
+        String authByteMessage = messages.get(1);
+        String invokeChallengeMessage = messages.get(2);
+        String LTKConfirmationMessage = messages.get(3);
+        String lockStatus = messages.get(4);
 
         byte[] lockMessage = Utils.hexStringToByteArray(STKGenerationMessage);
-        System.out.println("Message from Lock to generate STK: " + Utils.byteArrayToHex(lockMessage));
         STKGenerator stkGenerator = new STKGenerator();
         byte[] STK = stkGenerator.generateShortTermKey(lockMessage);
         System.out.println("STK: " + Utils.byteArrayToHex(STK));
@@ -53,6 +63,7 @@ public class Main {
         LTKGenerator ltkGenerator = new LTKGenerator();
         byte[] LTK = ltkGenerator.generateLongTermKey(copyOfRange);
         byte[] encryptedLTKConf = ltkGenerator.generateLongTermKeyConfirmationCommand(authByte, encryptionPart, LTK);
+        System.out.println("LTK: " + Utils.byteArrayToHex(LTK));
         System.out.println("Confirmation of LTK: " + Utils.byteArrayToHex(encryptedLTKConf));
 
         byte[] requestPersonalCode = request(Utils.concat(authByte, new byte[]{18}), Commands.REQUEST_PERSONAL_CODE, encryptionPart, LTK);

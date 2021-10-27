@@ -87,6 +87,7 @@ public class Utils {
     }
 
     public static void lockStatus(byte[] bArr) {
+        System.out.println("Lock Status:");
         if (bArr[0] == 11) {
             System.out.println("Lock is open!");
         } else if (bArr[0] == 2) {
@@ -103,10 +104,10 @@ public class Utils {
             System.out.println("Alarm: Off");
         }
         if (bArr[12] != 99) {
-            System.out.println("Byte 12 != 99: " + Utils.formatByteCode(new byte[]{bArr[12], bArr[13], bArr[14]}));
+            System.out.println("Personal Color Code: " + Utils.formatByteCode(new byte[]{bArr[12], bArr[13], bArr[14]}));
         }
         if (bArr[15] != 99) {
-            System.out.println("Byte 15 != 99: " + Utils.formatByteCode(new byte[]{bArr[15], bArr[16], bArr[17]}));
+            System.out.println("Personal Color Code: " + Utils.formatByteCode(new byte[]{bArr[15], bArr[16], bArr[17]}));
         }
     }
 
