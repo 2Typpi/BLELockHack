@@ -20,7 +20,6 @@ public class Main {
 
     public static void main(String[] args) {
         String filePath = args[0];
-        System.out.println(filePath);
 
         MessageParser messageParser = new MessageParser();
         List<String> messages = messageParser.getMessages(filePath);
@@ -51,6 +50,7 @@ public class Main {
         byte[] authByte = new byte[]{messageHex[34]};
         System.out.println("AuthByte: " + Utils.byteArrayToHex(authByte));
 
+        byte[] x = hexStringToByteArray(invokeChallengeMessage);
         byte[] encryptionPart = Arrays.copyOfRange(hexStringToByteArray(invokeChallengeMessage), 2, 18);
         ChallengeRequestGenerator challengeRequestGenerator = new ChallengeRequestGenerator();
         byte[] challengeRequest = challengeRequestGenerator.generateChallengeRequestCommand(authByte, encryptionPart, STK);
@@ -79,9 +79,17 @@ public class Main {
         byte[] lockStatusHex = hexStringToByteArray(lockStatus);
         byte[] decryptLockStatus = decryptMessage(LTK, encryptionPart, lockStatusHex);
         byte[] cpRange = Arrays.copyOfRange(decryptLockStatus, 4, decryptLockStatus.length - 2);
-        Utils.lockStatus(cpRange);
+        boolean lockOpen = Utils.lockStatus(cpRange);
         byte[] requestAlarmTimes = request(Utils.concat(authByte, new byte[]{18}), Commands.REQUEST_ALARM_TIMES, encryptionPart, LTK);
         System.out.println("Request Alarm Times: "+ byteArrayToHex(requestAlarmTimes));
+
+        //if (lockOpen){
+            byte[] openOrClose = Utils.response(Utils.concat(authByte, new byte[]{18}), Commands.RESPONSE_LOCK_ACTION, Utils.createLockAction((byte) 2), LTK, encryptionPart);
+            System.out.println("Message to close lock: "+ byteArrayToHex(openOrClose));
+        //} else {
+            openOrClose = Utils.response(Utils.concat(authByte, new byte[]{18}), Commands.RESPONSE_LOCK_ACTION, Utils.createLockAction((byte) 1), LTK, encryptionPart);
+            System.out.println("Message to open lock: "+ byteArrayToHex(openOrClose));
+        //}
     }
 
     public static byte[] request(byte[] bArr, byte[] bArr2, byte[] bArr3, byte[] bArr4) {

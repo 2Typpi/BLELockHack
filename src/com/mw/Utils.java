@@ -4,9 +4,13 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class Utils {
+
+    private static int counter = 2;
 
     public static String byteArrayToHex(byte[] bArr) {
         StringBuilder sb = new StringBuilder(bArr.length * 2);
@@ -86,10 +90,12 @@ public class Utils {
         return instance.doFinal(bArr3);
     }
 
-    public static void lockStatus(byte[] bArr) {
+    public static boolean lockStatus(byte[] bArr) {
         System.out.println("Lock Status:");
+        boolean lockOpen = false;
         if (bArr[0] == 11) {
             System.out.println("Lock is open!");
+            lockOpen = true;
         } else if (bArr[0] == 2) {
             System.out.println("Lock is closed");
         } else if (bArr[0] == 15) {
@@ -103,11 +109,41 @@ public class Utils {
         } else if (bArr[1] == 0) {
             System.out.println("Alarm: Off");
         }
+        List<String> colorCodeString = new ArrayList<String>();
         if (bArr[12] != 99) {
-            System.out.println("Personal Color Code: " + Utils.formatByteCode(new byte[]{bArr[12], bArr[13], bArr[14]}));
+            String colorCode = Utils.formatByteCode(new byte[]{bArr[12], bArr[13], bArr[14]});
+            getColors(colorCodeString, colorCode);
+            System.out.println();
         }
         if (bArr[15] != 99) {
-            System.out.println("Personal Color Code: " + Utils.formatByteCode(new byte[]{bArr[15], bArr[16], bArr[17]}));
+            String colorCode = Utils.formatByteCode(new byte[]{bArr[15], bArr[16], bArr[17]});
+            getColors(colorCodeString, colorCode);
+            System.out.println();
+        }
+        return lockOpen;
+    }
+
+    private static void getColors(List<String> colorCodeString, String colorCode) {
+        for (char character:colorCode.toCharArray()){
+            switch (character){
+                case '0':
+                    colorCodeString.add("green");
+                    break;
+                case '1':
+                    colorCodeString.add("blue");
+                    break;
+                case '2':
+                    colorCodeString.add("red");
+                    break;
+                case '3':
+                    colorCodeString.add("white");
+                    break;
+            }
+
+        }
+        System.out.print("Personal Color Code: ");
+        for (String color: colorCodeString) {
+            System.out.print(color + ",");
         }
     }
 
@@ -126,5 +162,23 @@ public class Utils {
             sb.insert(4, "0");
         }
         return sb.toString();
+    }
+
+    public static byte[] createLockAction(byte b) {
+        int i = Utils.counter;
+        byte[] bArr = {(byte) (i & 255), (byte) (i >> 8), b};
+        Utils.counter = i + 1;
+        return bArr;
+    }
+
+    public static byte[] response(byte[] bArr, byte[] bArr2, byte[] bArr3, byte[] LTK, byte[] encryptionPart) {
+        byte[] calculate = calculate(Utils.concat(Utils.concat(new byte[]{bArr[0]}, bArr2), bArr3));
+        byte[] concat = Utils.concat(Utils.concat(Utils.concat(new byte[]{bArr[0]}, bArr2), bArr3), Utils.reverse(calculate, calculate.length));
+        try {
+            return Utils.concat(bArr, encrypt(LTK, encryptionPart, concat));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
